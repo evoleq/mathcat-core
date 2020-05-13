@@ -16,3 +16,4 @@
 package org.evoleq.math.cat.marker
 
 @DslMarker annotation class MathCatDsl
+@DslMarker annotation class MathSpeakDsl
