@@ -13,32 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.evoleq.math.cat.functor
+package org.evoleq.math.cat.applicative
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
+import org.evoleq.math.cat.functor.Functor
 import org.evoleq.math.cat.marker.MathCatDsl
 
-typealias Diagonal<T> = Pair<T, T>
+interface Applicative<out A> : Functor<A> {
+    
+    @MathCatDsl
+    infix fun <B> apply(applicative: Applicative<(A)->B>): Applicative<B>
+    
+    @MathCatDsl
+    override infix fun <B> map(f: (A)->B): Applicative<B>
+}
 
 @MathCatDsl
-@Suppress("FunctionName")
-fun <T> Diagonal(value: T): Diagonal<T> = Pair(value,value)
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-infix fun <S, T> Diagonal<S>.map(f: (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend CoroutineScope.(S)->T): Diagonal<T> = coroutineScope { Diagonal(f(first)) }
+fun <A, B> Applicative<(A)->B>.pipe(applicative: Applicative<A>): Applicative<B> = applicative.apply(this)

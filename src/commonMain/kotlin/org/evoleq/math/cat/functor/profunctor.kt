@@ -15,30 +15,16 @@
  */
 package org.evoleq.math.cat.functor
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
-typealias Diagonal<T> = Pair<T, T>
+interface Profunctor<A, B> : ContraFunctor<A>, Functor<B> {
+    @MathCatDsl
+    fun <C, D> diMap(pre: (C)->A, post: (B)->D): Profunctor<C, D>
+    
+    @MathCatDsl
+    override fun <C> contraMap(f: (C) -> A): Profunctor<C, B> = diMap(f, {b->b})
+    
+    @MathCatDsl
+    override fun <D> map(f: (B) -> D): Profunctor<A, D> = diMap({a->a},f)
+}
 
-@MathCatDsl
-@Suppress("FunctionName")
-fun <T> Diagonal(value: T): Diagonal<T> = Pair(value,value)
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-infix fun <S, T> Diagonal<S>.map(f: (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend CoroutineScope.(S)->T): Diagonal<T> = coroutineScope { Diagonal(f(first)) }

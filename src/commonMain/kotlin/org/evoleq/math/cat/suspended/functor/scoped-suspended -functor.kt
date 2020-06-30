@@ -13,32 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.evoleq.math.cat.functor
+package org.evoleq.math.cat.suspended.functor
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
-typealias Diagonal<T> = Pair<T, T>
+interface ScopedSuspendedFunctor<out T> {
+    
+    @MathCatDsl
+    suspend infix fun <U> map(f: suspend CoroutineScope.(T)->U): ScopedSuspendedFunctor<U>
+}
 
-@MathCatDsl
-@Suppress("FunctionName")
-fun <T> Diagonal(value: T): Diagonal<T> = Pair(value,value)
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-infix fun <S, T> Diagonal<S>.map(f: (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend CoroutineScope.(S)->T): Diagonal<T> = coroutineScope { Diagonal(f(first)) }
+interface ScopedSuspendedContraFunctor<in T> {
+    @MathCatDsl
+    suspend infix fun <S> contraMap(f: suspend CoroutineScope.(S)->T): ScopedSuspendedContraFunctor<S>
+}

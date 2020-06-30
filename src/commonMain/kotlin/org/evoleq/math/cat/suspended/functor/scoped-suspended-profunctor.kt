@@ -13,32 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.evoleq.math.cat.functor
+package org.evoleq.math.cat.suspended.functor
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
-typealias Diagonal<T> = Pair<T, T>
-
-@MathCatDsl
-@Suppress("FunctionName")
-fun <T> Diagonal(value: T): Diagonal<T> = Pair(value,value)
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-infix fun <S, T> Diagonal<S>.map(f: (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend (S)->T): Diagonal<T> = Diagonal(f(first))
-
-/**
- * Map a Diagonal
- */
-@MathCatDsl
-suspend infix fun <S, T> Diagonal<S>.map(f: suspend CoroutineScope.(S)->T): Diagonal<T> = coroutineScope { Diagonal(f(first)) }
+interface ScopedSuspendedProfunctor<A, B> : ScopedSuspendedContraFunctor<A>, ScopedSuspendedFunctor<B> {
+    
+    @MathCatDsl
+    suspend fun <C, D> diMap(pre: suspend CoroutineScope.(C)->A, post: suspend CoroutineScope.(B)->D): ScopedSuspendedProfunctor<C, D>
+    
+    @MathCatDsl
+    override suspend fun <C> contraMap(f: suspend CoroutineScope.(C) -> A): ScopedSuspendedProfunctor<C, B> = diMap(f, {b->b})
+    
+    @MathCatDsl
+    override suspend fun <D> map(f: suspend CoroutineScope.(B) -> D): ScopedSuspendedProfunctor<A, D> = diMap({a->a}, f)
+}
