@@ -20,10 +20,9 @@ import org.evoleq.math.cat.functor.ContraFunctor
 import org.evoleq.math.cat.marker.MathCatDsl
 
 
-abstract class Monad<out T>(protected val value: T) : Applicative<T> {
-    
+interface Monad<out T> : Applicative<T> {
     @MathCatDsl
-    abstract override infix fun <U> map(f: (T)->U): Monad<U>
+    override  infix fun <U> map(f: (T)->U): Monad<U>
     
     @MathCatDsl
     override infix fun <U> apply(applicative: Applicative<(T) -> U>): Monad<U> = (applicative as Monad<(T)->U>) bind {
@@ -31,7 +30,7 @@ abstract class Monad<out T>(protected val value: T) : Applicative<T> {
     }
     
     @MathCatDsl
-    abstract infix fun <U> bind(f: (T)->Monad<U>): Monad<U>
+    infix fun <U> bind(f: (T)->Monad<U>): Monad<U>
 }
 
 @MathCatDsl
