@@ -6,11 +6,6 @@ typealias Either<L, R> = Sum<L, R>
 typealias Left<L, R> = Sum.Summand1<L,R>
 typealias Right<L, R> = Sum.Summand2<L,R>
 
-typealias Maybe<T> = Sum<kotlin.Nothing, T>
-typealias Just<T> = Sum.Summand1<kotlin.Nothing, T>
-typealias Nothing<T> = Sum.Summand2<kotlin.Nothing, T>
-
-
 sealed class Sum<out S1, out S2> {
     data class Summand1<S1, S2>(val value: S1): Sum<S1, S2>()
     data class Summand2<S1, S2>(val value: S2): Sum<S1, S2>()
@@ -31,6 +26,38 @@ sealed class Sum<out S1, out S2> {
     
         @MathCatDsl
         fun <S1, S2, S3> lift2(f: (S2)->S3): (Sum<S1, S2>)->Sum<S1, S3> = {sum -> sum map2 f}
+        
+        @MathCatDsl
+        fun <S1, S2> ret(): (S2)-> Sum<S1,S2> = iota2()
+        
+        @MathCatDsl
+        fun <S1, S2> multiply(): (Sum<Sum<S1, S2>, S2>)->Sum<S1, S2> = {sum ->
+            when(sum) {
+                is Summand1 -> sum.value
+                is Summand2 -> Summand2(sum.value)
+            }
+        }
+        @MathCatDsl
+        fun <S1, S2, S3> merge() :(Sum<Sum<S1, S2>, Sum<S1,S3>>)->Sum<S1,Sum<S2,S3>> = {
+            sum -> when(sum) {
+                is Summand1 -> when(val summand = sum.value) {
+                    is Summand1 -> Summand1(summand.value)
+                    is Summand2 -> Summand2(Summand1(summand.value))
+                }
+                is Summand2 -> when(val summand = sum.value) {
+                    is Summand1 -> Summand1(summand.value)
+                    is Summand2 -> Summand2(Summand2(summand.value))
+                }
+            }
+        }
+    
+        @MathCatDsl
+        fun <S1, S2, S3> swapOverPair(): (Pair<Either<S1, S2>,S3>)-> Either<S1,Pair<S2, S3>> = {
+            pair: Pair<Either<S1, S2>, S3> -> when(val either = pair.first) {
+                is Summand1 -> Summand1(either.value)
+                is Summand2 -> Summand2(Pair(either.value,pair.second))
+            }
+        }
     }
 }
 
@@ -55,7 +82,7 @@ fun <S1, S2> Sum<S1, S2>.swap(): Sum<S2, S1> = when(this) {
 }
 
 @MathCatDsl
-fun <S1, S2> swap():(Sum<S1, S2>)-> Sum<S2, S1> = {sum ->sum.swap()}
+fun <S1, S2> Sum.Companion.swap():(Sum<S1, S2>)-> Sum<S2, S1> = {sum ->sum.swap()}
 
 @MathCatDsl
 fun <S1, S2, S3> Sum<Sum<S1, S2>,S3>.assocTail(): Sum<S1,Sum< S2,S3>> = when(val summand = this) {
@@ -67,7 +94,7 @@ fun <S1, S2, S3> Sum<Sum<S1, S2>,S3>.assocTail(): Sum<S1,Sum< S2,S3>> = when(val
 }
 
 @MathCatDsl
-fun <S1, S2, S3> assocTail(): (Sum<Sum<S1, S2>,S3>)-> Sum<S1,Sum< S2,S3>> = {e -> e.assocTail()}
+fun <S1, S2, S3> Sum.Companion.assocTail(): (Sum<Sum<S1, S2>,S3>)-> Sum<S1,Sum< S2,S3>> = {e -> e.assocTail()}
 
 @MathCatDsl
 fun <S1, S2, S3> Sum<S1,Sum< S2,S3>>.assocHead():Sum<Sum<S1, S2>,S3> = when(val summand = this) {
