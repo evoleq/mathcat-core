@@ -1,5 +1,6 @@
 package org.evoleq.math.cat.adt
 
+import kotlinx.coroutines.CoroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
 typealias Either<L, R> = Sum<L, R>
@@ -20,6 +21,14 @@ sealed class Sum<out S1, out S2> {
     
         @MathCatDsl
         operator fun <S1, S2, S3> invoke(f: (S2)->S3): (Sum<S1, S2>)->Sum<S1, S3> = lift2(f)
+    
+        @MathCatDsl
+        operator fun <S1, S2, S3> invoke(f: suspend CoroutineScope.(S2)->S3): suspend CoroutineScope.(Sum<S1, S2>)->Sum<S1, S3> = {
+            sum -> when(sum) {
+                is Summand1 -> Summand1(sum.value)
+                is Summand2 -> Summand2(f(sum.value))
+            }
+        }
     
         @MathCatDsl
         fun <S1, S2, S3> lift1(f: (S1)->S3): (Sum<S1, S2>)->Sum<S3, S2> = {sum -> sum map1 f}
