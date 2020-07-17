@@ -15,9 +15,74 @@
  */
 package org.evoleq.math.cat.adt
 
+import org.evoleq.math.cat.marker.MathCatDsl
+
+
 typealias Nothing = Maybe.Nothing
 
 sealed class Maybe<out T> {
     data class Just<T> (val value: T) : Maybe<T>()
     object Nothing : Maybe<kotlin.Nothing>()
+    
+    companion object {
+        /**
+         * [Maybe] is a functor
+         */
+        @MathCatDsl
+        operator fun <S, T> invoke(f:(S)->T): (Maybe<S>) ->Maybe<T> = {
+            maybe: Maybe<S> -> when(maybe) {
+                is Nothing -> Nothing
+                is Just -> Just(f(maybe.value))
+            }
+        }
+    
+        /**
+         * Return function of [Maybe] monad
+         */
+        @MathCatDsl
+        fun <T> ret(): (T)->Maybe<T> = {t: T ->  Just(t)}
+    
+        /**
+         * Return function of [Maybe] monad
+         */
+        @MathCatDsl
+        fun <T> ret(value : T): Maybe<T> = ret<T>()(value)
+    
+        /**
+         * Multiply [Maybe]s
+         */
+        @MathCatDsl
+        fun <T> multiply(): (Maybe<Maybe<T>>)->Maybe<T> = {
+            maybe -> when(maybe) {
+                is Nothing -> Nothing
+                is Just -> maybe.value
+            }
+        }
+    }
 }
+
+/**
+ * Map a [Maybe]
+ */
+@MathCatDsl
+infix fun <S, T> Maybe<S>.map(f: (S)->T): Maybe<T> = Maybe(f)(this)
+
+/**
+ * Bind function of [Maybe]
+ */
+@MathCatDsl
+fun <S, T> Maybe<S>.bind(f: (S)->Maybe<T>): Maybe<T> = Maybe.multiply<T>()(Maybe(f)(this))
+
+/**
+ * Apply function of [Maybe]
+ */
+@MathCatDsl
+fun <S, T> Maybe<(S)->T>.apply(): (Maybe<S>)->Maybe<T> = {
+    maybe -> bind { f -> maybe map f }
+}
+
+/**
+ * Apply function of [Maybe]
+ */
+@MathCatDsl
+fun <S, T> Maybe<(S)->T>.apply(maybe: Maybe<S>): Maybe<T> = apply()(maybe)
