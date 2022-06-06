@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.evoleq.math.cat.adt
+package org.evoleq.math.cat.suspend.adt
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
 
@@ -29,7 +31,7 @@ sealed class Maybe<out T> {
          * [Maybe] is a functor
          */
         @MathCatDsl
-        operator fun <S, T> invoke(f:(S)->T): (Maybe<S>) ->Maybe<T> = {
+        suspend operator fun <S, T> invoke(f:suspend CoroutineScope.(S)->T): suspend CoroutineScope.(Maybe<S>) ->Maybe<T> = {
             maybe: Maybe<S> -> when(maybe) {
                 is Nothing -> Nothing
                 is Just -> Just(f(maybe.value))
@@ -40,19 +42,19 @@ sealed class Maybe<out T> {
          * Return function of [Maybe] monad
          */
         @MathCatDsl
-        fun <T> ret(): (T)->Maybe<T> = {t: T ->  Just(t)}
+       suspend  fun <T> ret(): suspend CoroutineScope.(T)->Maybe<T> = {t: T ->  Just(t)}
     
         /**
          * Return function of [Maybe] monad
          */
         @MathCatDsl
-        fun <T> ret(value : T): Maybe<T> = ret<T>()(value)
+        suspend fun <T> ret(value : T): Maybe<T> = coroutineScope {  ret<T>()(value) }
     
         /**
          * Multiply [Maybe]s
          */
         @MathCatDsl
-        fun <T> multiply(): (Maybe<Maybe<T>>)->Maybe<T> = {
+        suspend fun <T> multiply(): suspend CoroutineScope.(Maybe<Maybe<T>>)->Maybe<T> = {
             maybe -> when(maybe) {
                 is Nothing -> Nothing
                 is Just -> maybe.value
@@ -65,19 +67,19 @@ sealed class Maybe<out T> {
  * Map a [Maybe]
  */
 @MathCatDsl
-infix fun <S, T> Maybe<S>.map(f: (S)->T): Maybe<T> = Maybe(f)(this)
+suspend infix fun <S, T> Maybe<S>.map(f: suspend CoroutineScope.(S)->T): Maybe<T> = coroutineScope { Maybe( f)(this@map) }
 
 /**
  * Bind function of [Maybe]
  */
 @MathCatDsl
-fun <S, T> Maybe<S>.bind(f: (S)->Maybe<T>): Maybe<T> = Maybe.multiply<T>()(Maybe(f)(this))
+suspend infix fun <S, T> Maybe<S>.bind(f: suspend CoroutineScope.(S)->Maybe<T>): Maybe<T> = coroutineScope { Maybe.multiply<T>()(Maybe(f)(this@bind)) }
 
 /**
  * Apply function of [Maybe]
  */
 @MathCatDsl
-fun <S, T> Maybe<(S)->T>.apply(): (Maybe<S>)->Maybe<T> = {
+suspend fun <S, T> Maybe<suspend CoroutineScope.(S)->T>.apply():suspend CoroutineScope.(Maybe<S>)->Maybe<T> = {
     maybe -> bind { f -> maybe map f }
 }
 
@@ -85,25 +87,35 @@ fun <S, T> Maybe<(S)->T>.apply(): (Maybe<S>)->Maybe<T> = {
  * Apply function of [Maybe]
  */
 @MathCatDsl
-fun <S, T> Maybe<(S)->T>.apply(maybe: Maybe<S>): Maybe<T> = apply()(maybe)
+suspend infix fun <S, T> Maybe<suspend CoroutineScope.(S)->T>.apply(maybe: Maybe<S>): Maybe<T> = coroutineScope { apply()(maybe) }
+
+/**
+ * Discard first
+ */
+//infix fun <T> Maybe<T>.`*>`(other: Maybe<T>): Maybe<T> =
+
 
 /**
  * Alternative OR (<|>)
  */
 @MathCatDsl
-@Suppress("FunctionName")
-infix fun <T> Maybe<T>.OR(other: Maybe<T>): Maybe<T> = when(this) {
+suspend infix fun <T> Maybe<T>.OR(other: Maybe<T>): Maybe<T> = when(this) {
     is Maybe.Just -> this
     is Maybe.Nothing -> when(other) {
         is Maybe.Just -> other
         is Maybe.Nothing -> Maybe.Nothing
     }
 }
+
 /**
  * Alternative Empty
  */
 @MathCatDsl
 @Suppress("FunctionName")
-fun Maybe.Companion.Empty() = Maybe.Nothing
+suspend fun Maybe.Companion.Empty() = Maybe.Nothing
 
-//infix fun <T> Maybe<T>.`*>`(other: Maybe<T>): Maybe<T> =
+@MathCatDsl
+suspend fun <T> Maybe<T>.measure(default: T): T = when(this) {
+    is Maybe.Just -> value
+    is Maybe.Nothing -> default
+}
