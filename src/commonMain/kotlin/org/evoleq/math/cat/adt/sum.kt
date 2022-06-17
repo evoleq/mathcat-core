@@ -140,4 +140,4 @@ fun <S1, S2, S3> Sum<S1,Sum< S2,S3>>.assocHead():Sum<Sum<S1, S2>,S3> = when(val 
 fun <S1, S2> Sum<S1, Sum<S1, S2>>.multiply1(): Sum<S1, S2> = Sum.multiply1<S1, S2>()(this)
 
 @MathCatDsl
-infix fun <S1, S2, T> Sum<S1, S2>.measureBy(measure: (Sum<S1, S2>)->T): (Sum<S1, S2>)->T = Sum.measureBy(measure)
+infix fun <S1, S2, T> Sum<S1, S2>.measureBy(measure: (Sum<S1, S2>)->T): T = Sum.measureBy(measure)(this)
