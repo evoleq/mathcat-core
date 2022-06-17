@@ -18,10 +18,6 @@ package org.evoleq.math.cat.adt
 import kotlinx.coroutines.CoroutineScope
 import org.evoleq.math.cat.marker.MathCatDsl
 
-typealias Either<L, R> = Sum<L, R>
-typealias Left<L, R> = Sum.Summand1<L,R>
-typealias Right<L, R> = Sum.Summand2<L,R>
-
 sealed class Sum<out S1, out S2> {
     data class Summand1<S1, S2>(val value: S1): Sum<S1, S2>()
     data class Summand2<S1, S2>(val value: S2): Sum<S1, S2>()
@@ -53,7 +49,7 @@ sealed class Sum<out S1, out S2> {
         
         @MathCatDsl
         fun <S1, S2> ret(): (S2)-> Sum<S1,S2> = iota2()
-        
+
         @MathCatDsl
         fun <S1, S2> multiply(): (Sum<Sum<S1, S2>, S2>)->Sum<S1, S2> = {sum ->
             when(sum) {
@@ -61,6 +57,15 @@ sealed class Sum<out S1, out S2> {
                 is Summand2 -> Summand2(sum.value)
             }
         }
+
+        @MathCatDsl
+        fun <S1, S2> multiply1(): (Sum<S1, Sum<S1, S2>>)->Sum<S1, S2> = {sum ->
+            when(sum) {
+                is Summand2 -> sum.value
+                is Summand1 -> Summand1(sum.value)
+            }
+        }
+
         @MathCatDsl
         fun <S1, S2, S3> merge() :(Sum<Sum<S1, S2>, Sum<S1,S3>>)->Sum<S1,Sum<S2,S3>> = {
             sum -> when(sum) {
@@ -82,9 +87,11 @@ sealed class Sum<out S1, out S2> {
                 is Summand2 -> Summand2(Pair(either.value,pair.second))
             }
         }
+
+        @MathCatDsl
+        fun <S1, S2, T> measureBy(measure: (Sum<S1, S2>)->T): (Sum<S1, S2>)->T = measure
     }
 }
-
 
 
 @MathCatDsl
@@ -128,3 +135,9 @@ fun <S1, S2, S3> Sum<S1,Sum< S2,S3>>.assocHead():Sum<Sum<S1, S2>,S3> = when(val 
         is Sum.Summand2 -> Sum.Summand2(summand.value.value)
     }
 }
+
+@MathCatDsl
+fun <S1, S2> Sum<S1, Sum<S1, S2>>.multiply1(): Sum<S1, S2> = Sum.multiply1<S1, S2>()(this)
+
+@MathCatDsl
+infix fun <S1, S2, T> Sum<S1, S2>.measureBy(measure: (Sum<S1, S2>)->T): (Sum<S1, S2>)->T = Sum.measureBy(measure)
