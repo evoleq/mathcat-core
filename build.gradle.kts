@@ -12,9 +12,14 @@ plugins {
 group = Config.Module.MathcatCore.group
 version = Config.Module.MathcatCore.version//+"-SNAPSHOT"
 
+val mathcatRepo: String by project
+
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url = uri(mathcatRepo)
+    }
 }
 
 kotlin {

@@ -71,7 +71,7 @@ infix fun <S, T> Maybe<S>.map(f: (S)->T): Maybe<T> = Maybe(f)(this)
  * Bind function of [Maybe]
  */
 @MathCatDsl
-fun <S, T> Maybe<S>.bind(f: (S)->Maybe<T>): Maybe<T> = Maybe.multiply<T>()(Maybe(f)(this))
+infix fun <S, T> Maybe<S>.bind(f: (S)->Maybe<T>): Maybe<T> = Maybe.multiply<T>()(Maybe(f)(this))
 
 /**
  * Apply function of [Maybe]
@@ -106,4 +106,17 @@ infix fun <T> Maybe<T>.OR(other: Maybe<T>): Maybe<T> = when(this) {
 @Suppress("FunctionName")
 fun Maybe.Companion.Empty() = Maybe.Nothing
 
-//infix fun <T> Maybe<T>.`*>`(other: Maybe<T>): Maybe<T> =
+infix fun <S, T> Maybe<S>.discardLeft(right: Maybe<T>): Maybe<T> = this bind { right }
+
+
+infix fun <S, T> Maybe<S>.discardRight(right: Maybe<T>): Maybe<S> = right discardLeft this
+
+
+@MathCatDsl
+fun <T> Maybe<T>.measure(default: T): T = when(this) {
+    is Maybe.Just -> value
+    is Maybe.Nothing -> default
+}
+
+@MathCatDsl
+infix fun <S, T> Maybe<S>.measureBy(measure: (Maybe<S>)->T): T = measure(this)
